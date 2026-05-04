@@ -98,21 +98,33 @@ On top of the core broker management, BunkerM includes a **local statistical eng
 ### Prerequisites
 
 - [Docker](https://www.docker.com/get-started) installed
+- [Docker Compose](https://docs.docker.com/compose/install/) (optional but recommended)
 
-### Minimal — one command
+### Build from Source
+
+```bash
+git clone https://github.com/bunkeriot/BunkerM.git
+cd BunkerM
+docker-compose build bunkerm
+docker-compose up -d
+```
+
+Open **http://localhost:2000** in your browser.
+
+### Or use Docker Run
 
 ```bash
 docker run -d -p 1900:1900 -p 2000:2000 bunkeriot/bunkerm:latest
 ```
 
-Open **http://localhost:2000** and set up your first Admin account.
+> **Note:** The pre-built image uses default credentials `admin` / `2UbhHYRw`. For production deployments, build from source and set secure credentials via environment variables.
 
 | Port | Service |
 |------|---------|
 | `1900` | MQTT broker |
 | `2000` | Web UI |
 
-**Default MQTT credentials:** username `bunker` / password `bunker`
+**Default MQTT credentials:** username `admin` / password `2UbhHYRw`
 
 ---
 
@@ -122,9 +134,12 @@ Open **http://localhost:2000** and set up your first Admin account.
 docker run -d \
   -p 1900:1900 \
   -p 2000:2000 \
+  -e MQTT_USERNAME=admin \
+  -e MQTT_PASSWORD=YOUR_SECURE_PASSWORD \
   -v mosquitto_data:/var/lib/mosquitto \
   -v mosquitto_conf:/etc/mosquitto \
-  -v auth_data:/data \
+  -v next_data:/nextjs/data \
+  -v history_data:/var/lib/history \
   bunkeriot/bunkerm:latest
 ```
 
@@ -137,6 +152,8 @@ docker run -d \
   -p 1900:1900 \
   -p 2000:2000 \
   -e HOST_ADDRESS=<YOUR_IP_OR_DOMAIN> \
+  -e MQTT_USERNAME=admin \
+  -e MQTT_PASSWORD=YOUR_SECURE_PASSWORD \
   bunkeriot/bunkerm:latest
 ```
 
@@ -147,23 +164,27 @@ docker run -d \
 ```yaml
 services:
   bunkerm:
-    image: bunkeriot/bunkerm:latest
+    build: .
     ports:
       - "1900:1900"
       - "2000:2000"
     volumes:
       - mosquitto_data:/var/lib/mosquitto
-      - mosquitto_conf:/etc/mosquitto
-      - auth_data:/data
+      - next_data:/nextjs/data
+      - history_data:/var/lib/history
     environment:
-      - HOST_ADDRESS=localhost          # change to your IP/domain for remote access
-      # - BUNKERAI_API_KEY=bkai_...     # optional: connect to BunkerAI
+      - MQTT_USERNAME=admin                  # Change in production
+      - MQTT_PASSWORD=2UbhHYRw               # Change in production
+      - MOSQUITTO_ADMIN_USERNAME=admin       # Change in production
+      - MOSQUITTO_ADMIN_PASSWORD=2UbhHYRw   # Change in production
+      - HOST_ADDRESS=localhost               # change to your IP/domain for remote access
+      # - BUNKERAI_API_KEY=bkai_...         # optional: connect to BunkerAI
     restart: unless-stopped
 
 volumes:
   mosquitto_data:
-  mosquitto_conf:
-  auth_data:
+  next_data:
+  history_data:
 ```
 
 ---
@@ -174,6 +195,29 @@ volumes:
 2. Go to **ACL → Clients** and create an MQTT client with a username and password
 3. Connect your MQTT device or client to `localhost:1900` using those credentials
 4. Explore the **Dashboard** to see live broker stats
+
+---
+
+### Configuration Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MQTT_USERNAME` | admin | MQTT broker admin username (used by backend services) |
+| `MQTT_PASSWORD` | 2UbhHYRw | MQTT broker admin password (used by backend services) |
+| `MOSQUITTO_ADMIN_USERNAME` | admin | Must match `MQTT_USERNAME` |
+| `MOSQUITTO_ADMIN_PASSWORD` | 2UbhHYRw | Must match `MQTT_PASSWORD` |
+| `MOSQUITTO_IP` | 127.0.0.1 | Mosquitto broker IP |
+| `MOSQUITTO_PORT` | 1900 | Mosquitto broker port |
+| `API_KEY` | (auto-generated) | API key for backend services |
+| `JWT_SECRET` | (random) | JWT signing secret |
+| `AUTH_SECRET` | bunkerm-secret | Next.js auth secret |
+| `HOST_ADDRESS` | localhost | External hostname/IP for the UI |
+| `FRONTEND_URL` | http://localhost:2000 | Frontend URL |
+| `BUNKERAI_API_KEY` | (empty) | BunkerAI cloud connection key |
+| `HISTORY_MAX_MESSAGES` | 50000 | Max message history records |
+| `HISTORY_MAX_AGE_DAYS` | 7 | Max message history age in days |
+
+> **Important:** `MQTT_USERNAME`/`MQTT_PASSWORD` and `MOSQUITTO_ADMIN_USERNAME`/`MOSQUITTO_ADMIN_PASSWORD` must always be set to the same values.
 
 ---
 
