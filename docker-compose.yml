@@ -20,8 +20,6 @@ services:
       - MQTT_PASSWORD=${MQTT_PASSWORD:-2UbhHYRw}
       - MOSQUITTO_IP=127.0.0.1
       - MOSQUITTO_PORT=1900
-      - MOSQUITTO_ADMIN_USERNAME=${MQTT_USERNAME:-admin}
-      - MOSQUITTO_ADMIN_PASSWORD=${MQTT_PASSWORD:-2UbhHYRw}
       # ── Security — CHANGE THESE in production ───────────────────────────────
       - JWT_SECRET=${JWT_SECRET:-default_jwt_secret_replace_in_production}
       - API_KEY=${API_KEY:-default_api_key_replace_in_production}

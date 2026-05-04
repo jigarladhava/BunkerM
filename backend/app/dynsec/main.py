@@ -7,7 +7,17 @@
 #
 # app/dynsec/main.py
 import logging
-from fastapi import FastAPI, HTTPException, Security, Depends, Request, status, UploadFile, File, Form
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    Security,
+    Depends,
+    Request,
+    status,
+    UploadFile,
+    File,
+    Form,
+)
 from fastapi.security.api_key import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -30,6 +40,7 @@ from logging.handlers import RotatingFileHandler
 from pydantic import BaseModel, Field
 from password_import import router as password_import_router
 import uvicorn
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -43,22 +54,24 @@ class RequestParams(BaseModel):
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 handler = RotatingFileHandler(
-    "dynsec_api_activity.log", maxBytes=10000000, backupCount=5  # 10MB
+    "dynsec_api_activity.log",
+    maxBytes=10000000,
+    backupCount=5,  # 10MB
 )
 logger.addHandler(handler)
 
 # Environment variables
-MOSQUITTO_ADMIN_USERNAME = os.getenv("MOSQUITTO_ADMIN_USERNAME")
-MOSQUITTO_ADMIN_PASSWORD = os.getenv("MOSQUITTO_ADMIN_PASSWORD")
-MOSQUITTO_IP = os.getenv("MOSQUITTO_IP")
-MOSQUITTO_PORT = os.getenv("MOSQUITTO_PORT")
+MOSQUITTO_IP = os.getenv("MOSQUITTO_IP", "127.0.0.1")
+MOSQUITTO_PORT = os.getenv("MOSQUITTO_PORT", "1900")
 API_KEY = os.getenv("API_KEY")
 
 _api_key_cache: dict = {"key": "", "ts": 0.0}
 
+
 def _get_current_api_key() -> str:
     """Return the active API key, refreshing from file every 5 s."""
     import time as _t
+
     now = _t.time()
     if _api_key_cache["key"] and now - _api_key_cache["ts"] < 5.0:
         return _api_key_cache["key"]
@@ -77,16 +90,21 @@ def _get_current_api_key() -> str:
     _api_key_cache["ts"] = now
     return key
 
+
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost").split(",")
 
 # Base command for mosquitto_ctrl
 DYNSEC_BASE_COMMAND = [
     "mosquitto_ctrl",
-    "-h", os.getenv("MOSQUITTO_IP"),
-    "-p", os.getenv("MOSQUITTO_PORT"),
-    "-u", os.getenv("MOSQUITTO_ADMIN_USERNAME"),
-    "-P", os.getenv("MOSQUITTO_ADMIN_PASSWORD"),
-    "dynsec"
+    "-h",
+    os.getenv("MOSQUITTO_IP", "127.0.0.1"),
+    "-p",
+    os.getenv("MOSQUITTO_PORT", "1900"),
+    "-u",
+    os.getenv("MQTT_USERNAME"),
+    "-P",
+    os.getenv("MQTT_PASSWORD"),
+    "dynsec",
 ]
 
 # Initialize FastAPI app with versioning
@@ -114,6 +132,7 @@ api_key_header = APIKeyHeader(name="X-API-Key", auto_error=True)
 
 # Import mosquitto password file
 app.include_router(password_import_router, prefix="/api/v1")
+
 
 async def get_api_key(api_key_header: str = Security(api_key_header)):
     if api_key_header != _get_current_api_key():
@@ -202,7 +221,9 @@ class ACLRequest(BaseModel):
 
 
 # Mosquitto command execution with logging
-def execute_mosquitto_command(command: list, input_data: str = None) -> tuple[bool, str]:
+def execute_mosquitto_command(
+    command: list, input_data: str = None
+) -> tuple[bool, str]:
     try:
         full_command = DYNSEC_BASE_COMMAND + command
         logger.debug(f"Executing command: {' '.join(full_command)}")
@@ -354,7 +375,13 @@ async def get_client(
         # Parse the output
         try:
             lines = result.split("\n")
-            client_info = {"username": "", "clientid": "", "disabled": False, "roles": [], "groups": []}
+            client_info = {
+                "username": "",
+                "clientid": "",
+                "disabled": False,
+                "roles": [],
+                "groups": [],
+            }
 
             for line in lines:
                 line = line.strip()
@@ -363,7 +390,9 @@ async def get_client(
                 elif line.startswith("Clientid:"):
                     client_info["clientid"] = line.split("Clientid:")[1].strip()
                 elif line.startswith("Disabled:"):
-                    client_info["disabled"] = line.split("Disabled:")[1].strip().lower() == "true"
+                    client_info["disabled"] = (
+                        line.split("Disabled:")[1].strip().lower() == "true"
+                    )
                 elif line.startswith("Roles:"):
                     role_info = line.split("Roles:")[1].strip()
                     if role_info:

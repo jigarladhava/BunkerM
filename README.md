@@ -174,9 +174,7 @@ services:
       - history_data:/var/lib/history
     environment:
       - MQTT_USERNAME=admin                  # Change in production
-      - MQTT_PASSWORD=2UbhHYRw               # Change in production
-      - MOSQUITTO_ADMIN_USERNAME=admin       # Change in production
-      - MOSQUITTO_ADMIN_PASSWORD=2UbhHYRw   # Change in production
+      - MQTT_PASSWORD=YOUR_SECURE_PASSWORD   # Change in production
       - HOST_ADDRESS=localhost               # change to your IP/domain for remote access
       # - BUNKERAI_API_KEY=bkai_...         # optional: connect to BunkerAI
     restart: unless-stopped
@@ -202,10 +200,8 @@ volumes:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MQTT_USERNAME` | admin | MQTT broker admin username (used by backend services) |
-| `MQTT_PASSWORD` | 2UbhHYRw | MQTT broker admin password (used by backend services) |
-| `MOSQUITTO_ADMIN_USERNAME` | admin | Must match `MQTT_USERNAME` |
-| `MOSQUITTO_ADMIN_PASSWORD` | 2UbhHYRw | Must match `MQTT_PASSWORD` |
+| `MQTT_USERNAME` | admin | MQTT broker admin username (used for all connections) |
+| `MQTT_PASSWORD` | 2UbhHYRw | MQTT broker admin password (used for all connections) |
 | `MOSQUITTO_IP` | 127.0.0.1 | Mosquitto broker IP |
 | `MOSQUITTO_PORT` | 1900 | Mosquitto broker port |
 | `API_KEY` | (auto-generated) | API key for backend services |
@@ -216,8 +212,6 @@ volumes:
 | `BUNKERAI_API_KEY` | (empty) | BunkerAI cloud connection key |
 | `HISTORY_MAX_MESSAGES` | 50000 | Max message history records |
 | `HISTORY_MAX_AGE_DAYS` | 7 | Max message history age in days |
-
-> **Important:** `MQTT_USERNAME`/`MQTT_PASSWORD` and `MOSQUITTO_ADMIN_USERNAME`/`MOSQUITTO_ADMIN_PASSWORD` must always be set to the same values.
 
 ---
 

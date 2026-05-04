@@ -23,20 +23,25 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Environment variables
-MOSQUITTO_ADMIN_USERNAME = os.getenv("MOSQUITTO_ADMIN_USERNAME", "bunker")
-MOSQUITTO_ADMIN_PASSWORD = os.getenv("MOSQUITTO_ADMIN_PASSWORD", "bunker")
 MOSQUITTO_IP = os.getenv("MOSQUITTO_IP", "localhost")
 MOSQUITTO_PORT = os.getenv("MOSQUITTO_PORT", "1883")
+MQTT_USERNAME = os.getenv("MQTT_USERNAME", "admin")
+MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "2UbhHYRw")
 
 # Base command for mosquitto_ctrl
 MOSQUITTO_BASE_COMMAND = [
     "mosquitto_ctrl",
-    "-h", MOSQUITTO_IP,
-    "-p", MOSQUITTO_PORT,
-    "-u", MOSQUITTO_ADMIN_USERNAME,
-    "-P", MOSQUITTO_ADMIN_PASSWORD,
-    "dynsec"
+    "-h",
+    MOSQUITTO_IP,
+    "-p",
+    MOSQUITTO_PORT,
+    "-u",
+    MQTT_USERNAME,
+    "-P",
+    MQTT_PASSWORD,
+    "dynsec",
 ]
+
 
 class MQTTEvent(BaseModel):
     id: str
@@ -51,6 +56,7 @@ class MQTTEvent(BaseModel):
     username: str
     ip_address: str
     port: int
+
 
 class MQTTMonitor:
     def __init__(self):
@@ -164,6 +170,7 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=ALLOWED_HOSTS)
 # Initialize MQTT monitor
 mqtt_monitor = MQTTMonitor()
 
+
 def execute_mosquitto_command(command: list) -> None:
     """Execute a mosquitto_ctrl command with the base configuration"""
     try:
@@ -171,6 +178,7 @@ def execute_mosquitto_command(command: list) -> None:
         subprocess.run(full_command, check=True)
     except subprocess.CalledProcessError as e:
         raise HTTPException(status_code=500, detail=f"Command failed: {str(e)}")
+
 
 # Updated endpoint paths to match the frontend expectations
 @app.post("/api/v1/enable/{username}")
@@ -181,7 +189,10 @@ async def enable_client(username: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to enable client: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to enable client: {str(e)}"
+        )
+
 
 @app.post("/api/v1/disable/{username}")
 async def disable_client(username: str):
@@ -191,18 +202,27 @@ async def disable_client(username: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to disable client: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to disable client: {str(e)}"
+        )
+
 
 @app.get("/api/v1/events")  # Changed to match frontend expectation
 async def get_mqtt_events():
     print(f"Current events in memory: {len(mqtt_monitor.events)}")
-    sorted_events = sorted(mqtt_monitor.events, key=lambda x: x.timestamp, reverse=True)[:100]
+    sorted_events = sorted(
+        mqtt_monitor.events, key=lambda x: x.timestamp, reverse=True
+    )[:100]
     return {"events": [event.dict() for event in sorted_events]}
+
 
 @app.get("/api/v1/connected-clients")
 async def get_connected_clients():
     print(f"Current connected clients: {len(mqtt_monitor.connected_clients)}")
-    return {"clients": [client.dict() for client in mqtt_monitor.connected_clients.values()]}
+    return {
+        "clients": [client.dict() for client in mqtt_monitor.connected_clients.values()]
+    }
+
 
 def monitor_mosquitto_logs():
     print("Starting mosquitto log monitoring...")
@@ -210,10 +230,10 @@ def monitor_mosquitto_logs():
         ["tail", "-f", "/var/log/mosquitto/mosquitto.log"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        universal_newlines=True
+        universal_newlines=True,
     )
     print("Mosquitto log monitoring process started")
-    
+
     while True:
         line = process.stdout.readline()
         if line:
@@ -222,15 +242,13 @@ def monitor_mosquitto_logs():
             if not event:
                 event = mqtt_monitor.parse_disconnection_log(line)
 
+
 if __name__ == "__main__":
     # Start log monitoring in a separate thread
     import threading
+
     log_thread = threading.Thread(target=monitor_mosquitto_logs, daemon=True)
     log_thread.start()
-    
+
     # Start the FastAPI server without SSL
-    uvicorn.run(
-        app,
-        host="0.0.0.0",
-        port=1002
-    )
+    uvicorn.run(app, host="0.0.0.0", port=1002)
