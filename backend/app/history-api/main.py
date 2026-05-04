@@ -22,20 +22,21 @@ from pydantic import BaseModel
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
-DB_PATH        = os.getenv("HISTORY_DB_PATH", "/var/lib/history/history.db")
-MAX_MESSAGES   = int(os.getenv("HISTORY_MAX_MESSAGES", "50000"))
-MAX_AGE_DAYS   = int(os.getenv("HISTORY_MAX_AGE_DAYS",  "7"))
-API_KEY        = os.getenv("API_KEY", "default_api_key_replace_in_production")
+DB_PATH = os.getenv("HISTORY_DB_PATH", "/var/lib/history/history.db")
+MAX_MESSAGES = int(os.getenv("HISTORY_MAX_MESSAGES", "50000"))
+MAX_AGE_DAYS = int(os.getenv("HISTORY_MAX_AGE_DAYS", "7"))
+API_KEY = os.getenv("API_KEY", "default_api_key_replace_in_production")
 
-MQTT_HOST      = os.getenv("MQTT_BROKER",   "localhost")
-MQTT_PORT      = int(os.getenv("MQTT_PORT", "1900"))
-MQTT_USER      = os.getenv("MQTT_USERNAME", "bunker")
-MQTT_PASS      = os.getenv("MQTT_PASSWORD", "bunker")
+MQTT_HOST = os.getenv("MQTT_BROKER", "localhost")
+MQTT_PORT = int(os.getenv("MQTT_PORT", "1900"))
+MQTT_USER = os.getenv("MQTT_USERNAME", "admin")
+MQTT_PASS = os.getenv("MQTT_PASSWORD", "2UbhHYRw")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("history-api")
 
 # ── Database ─────────────────────────────────────────────────────────────────
+
 
 def get_db() -> sqlite3.Connection:
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
@@ -79,6 +80,7 @@ def prune_db() -> None:
         )
     conn.commit()
     conn.close()
+
 
 # ── MQTT subscriber ───────────────────────────────────────────────────────────
 
@@ -144,7 +146,9 @@ def start_mqtt() -> None:
     t.start()
     log.info("MQTT subscriber thread started")
 
+
 # ── FastAPI app ───────────────────────────────────────────────────────────────
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -170,6 +174,7 @@ def verify_api_key(x_api_key: str = Query(None, alias="x-api-key")):
 
 # ── Models ────────────────────────────────────────────────────────────────────
 
+
 class ReplayRequest(BaseModel):
     topic: str
     payload: Optional[str] = ""
@@ -178,6 +183,7 @@ class ReplayRequest(BaseModel):
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
+
 
 @app.get("/api/v1/stats")
 def get_stats():
@@ -188,9 +194,9 @@ def get_stats():
     db_size = os.path.getsize(DB_PATH) if os.path.exists(DB_PATH) else 0
     conn.close()
     return {
-        "total":        row["total"],
-        "oldest_ts":    row["oldest_ts"],
-        "newest_ts":    row["newest_ts"],
+        "total": row["total"],
+        "oldest_ts": row["oldest_ts"],
+        "newest_ts": row["newest_ts"],
         "db_size_bytes": db_size,
         "max_messages": MAX_MESSAGES,
         "max_age_days": MAX_AGE_DAYS,
@@ -209,12 +215,12 @@ def get_topics():
 
 @app.get("/api/v1/messages")
 def get_messages(
-    topic:   Optional[str] = Query(None),
-    search:  Optional[str] = Query(None),
+    topic: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
     from_ts: Optional[int] = Query(None),
-    to_ts:   Optional[int] = Query(None),
-    limit:   int           = Query(100, ge=1, le=1000),
-    offset:  int           = Query(0,   ge=0),
+    to_ts: Optional[int] = Query(None),
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
 ):
     clauses = []
     params: list = []
@@ -235,13 +241,13 @@ def get_messages(
     where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
     conn = get_db()
     total = conn.execute(f"SELECT COUNT(*) FROM messages {where}", params).fetchone()[0]
-    rows  = conn.execute(
+    rows = conn.execute(
         f"SELECT * FROM messages {where} ORDER BY ts DESC LIMIT ? OFFSET ?",
         params + [limit, offset],
     ).fetchall()
     conn.close()
     return {
-        "total":    total,
+        "total": total,
         "messages": [dict(r) for r in rows],
     }
 
@@ -251,7 +257,9 @@ def replay_message(body: ReplayRequest):
     if _mqtt_client is None:
         raise HTTPException(status_code=503, detail="MQTT client not ready")
     payload_bytes = (body.payload or "").encode("utf-8")
-    info = _mqtt_client.publish(body.topic, payload_bytes, qos=body.qos, retain=body.retain)
+    info = _mqtt_client.publish(
+        body.topic, payload_bytes, qos=body.qos, retain=body.retain
+    )
     if info.rc != mqtt.MQTT_ERR_SUCCESS:
         raise HTTPException(status_code=500, detail=f"Publish failed rc={info.rc}")
     return {"status": "published", "topic": body.topic}

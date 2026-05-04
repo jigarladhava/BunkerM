@@ -254,7 +254,7 @@ const headers = [
 const formTitle = computed(() => editedIndex.value === -1 ? 'New Client' : 'Edit Client');
 
 const filteredClients = computed(() => {
-  return clients.value.filter(client => client.username !== 'bunker');
+  return clients.value.filter(client => client.username !== 'admin');
 });
 
 onMounted(async () => {

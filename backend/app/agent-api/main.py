@@ -6,6 +6,7 @@ Activation is a one-time operation: either auto (internet) or manual key paste.
 
 Port: 1006
 """
+
 import asyncio
 import base64
 import json
@@ -30,18 +31,18 @@ from connector_agent.watcher.engine import WatcherEngine
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 
-DATA_DIR          = Path(os.environ.get("DATA_DIR", "/nextjs/data"))
-AGENTS_FILE       = DATA_DIR / "agents.json"
-EVENTS_FILE       = DATA_DIR / "watcher-events.json"
-INSTANCE_FILE     = DATA_DIR / "instance_id"
-ACTIVATION_FILE   = DATA_DIR / "activation.json"
+DATA_DIR = Path(os.environ.get("DATA_DIR", "/nextjs/data"))
+AGENTS_FILE = DATA_DIR / "agents.json"
+EVENTS_FILE = DATA_DIR / "watcher-events.json"
+INSTANCE_FILE = DATA_DIR / "instance_id"
+ACTIVATION_FILE = DATA_DIR / "activation.json"
 
-API_KEY      = os.environ.get("API_KEY", "default_api_key_replace_in_production")
-MQTT_HOST    = os.environ.get("MQTT_HOST", "127.0.0.1")
-MQTT_PORT    = int(os.environ.get("MQTT_PORT", "1900"))
-MQTT_USER    = os.environ.get("MQTT_USERNAME", "bunker")
-MQTT_PASS    = os.environ.get("MQTT_PASSWORD", "bunker")
-CLOUD_URL    = os.environ.get("BUNKERAI_ACTIVATION_URL", "https://api.bunkerai.dev")
+API_KEY = os.environ.get("API_KEY", "default_api_key_replace_in_production")
+MQTT_HOST = os.environ.get("MQTT_HOST", "127.0.0.1")
+MQTT_PORT = int(os.environ.get("MQTT_PORT", "1900"))
+MQTT_USER = os.environ.get("MQTT_USERNAME", "admin")
+MQTT_PASS = os.environ.get("MQTT_PASSWORD", "2UbhHYRw")
+CLOUD_URL = os.environ.get("BUNKERAI_ACTIVATION_URL", "https://api.bunkerai.dev")
 
 # Ed25519 public key — verifies signatures from BunkerAI Cloud (private key never in repo)
 _PUBLIC_KEY_B64 = "MhTngcCraCJ/Rqre27bKKf3Fdbov+gEE4vDFxZpZlwc="
@@ -55,6 +56,7 @@ logger = logging.getLogger(__name__)
 _lock = Lock()
 
 # ─── Activation helpers ───────────────────────────────────────────────────────
+
 
 def _b64url_decode(s: str) -> bytes:
     pad = 4 - len(s) % 4
@@ -81,9 +83,9 @@ def _verify_key(key: str, instance_id: str) -> dict | None:
         return None
     try:
         payload_bytes = _b64url_decode(parts[0])
-        sig_bytes     = _b64url_decode(parts[1])
+        sig_bytes = _b64url_decode(parts[1])
         pub = Ed25519PublicKey.from_public_bytes(base64.b64decode(_PUBLIC_KEY_B64))
-        pub.verify(sig_bytes, payload_bytes)           # raises on bad sig
+        pub.verify(sig_bytes, payload_bytes)  # raises on bad sig
         payload = json.loads(payload_bytes)
         if payload.get("instance_id") != instance_id:
             return None
@@ -132,6 +134,7 @@ async def _try_auto_activate(instance_id: str) -> bool:
 
 
 # ─── Storage helpers ──────────────────────────────────────────────────────────
+
 
 def _load_agents() -> dict:
     try:
@@ -190,6 +193,7 @@ def _require_activation():
 
 # ─── Activation endpoints ─────────────────────────────────────────────────────
 
+
 @app.get("/activation-status")
 async def activation_status(x_api_key: str = Header(...)):
     _auth(x_api_key)
@@ -206,14 +210,21 @@ async def activate(body: ActivateRequest, x_api_key: str = Header(...)):
     _auth(x_api_key)
     payload = _verify_key(body.key.strip(), _instance_id)
     if not payload:
-        raise HTTPException(status_code=400, detail="Invalid or mismatched license key.")
+        raise HTTPException(
+            status_code=400, detail="Invalid or mismatched license key."
+        )
     _store_activation(body.key.strip())
     _activated = True
     logger.info(f"Instance {_instance_id} manually activated.")
-    return {"activated": True, "tier": payload.get("tier"), "max_agents": payload.get("max_agents")}
+    return {
+        "activated": True,
+        "tier": payload.get("tier"),
+        "max_agents": payload.get("max_agents"),
+    }
 
 
 # ─── Watcher fire callback ────────────────────────────────────────────────────
+
 
 async def _on_watcher_fire(watcher_id: str, rendered_message: str, _created_by: str):
     with _lock:
@@ -243,6 +254,7 @@ async def _on_watcher_fire(watcher_id: str, rendered_message: str, _created_by: 
 
 # ─── Watcher events ───────────────────────────────────────────────────────────
 
+
 @app.get("/watcher-events")
 async def list_events(
     since: str | None = None,
@@ -258,6 +270,7 @@ async def list_events(
 
 
 # ─── Watchers CRUD ────────────────────────────────────────────────────────────
+
 
 class WatcherCreate(BaseModel):
     description: str
@@ -324,6 +337,7 @@ async def delete_watcher(watcher_id: str, x_api_key: str = Header(...)):
 
 # ─── Schedules CRUD ───────────────────────────────────────────────────────────
 
+
 class JobCreate(BaseModel):
     description: str
     cron: str
@@ -336,8 +350,12 @@ class JobCreate(BaseModel):
 def _publish_and_record(topic: str, payload: str, qos: int, retain: bool, job_id: str):
     try:
         mqtt_publish.single(
-            topic=topic, payload=payload, qos=qos, retain=retain,
-            hostname=MQTT_HOST, port=MQTT_PORT,
+            topic=topic,
+            payload=payload,
+            qos=qos,
+            retain=retain,
+            hostname=MQTT_HOST,
+            port=MQTT_PORT,
             auth={"username": MQTT_USER, "password": MQTT_PASS},
         )
         logger.info(f"Scheduler job {job_id} fired: {topic} = {payload[:60]}")
@@ -356,8 +374,16 @@ def _add_to_scheduler(job: dict):
     try:
         trigger = CronTrigger.from_crontab(job["cron"])
         scheduler.add_job(
-            _publish_and_record, trigger=trigger, id=job["id"],
-            args=[job["topic"], job["payload"], job.get("qos", 0), job.get("retain", False), job["id"]],
+            _publish_and_record,
+            trigger=trigger,
+            id=job["id"],
+            args=[
+                job["topic"],
+                job["payload"],
+                job.get("qos", 0),
+                job.get("retain", False),
+                job["id"],
+            ],
             replace_existing=True,
         )
     except Exception as e:
@@ -427,9 +453,9 @@ LOCAL_LLM_CONFIG_FILE = DATA_DIR / "local_llm_config.json"
 _DEFAULT_LLM_URL = "http://host.docker.internal:1234"
 
 # Internal service URLs (same container)
-_MONITOR_URL    = "http://127.0.0.1:1001/api/v1"
+_MONITOR_URL = "http://127.0.0.1:1001/api/v1"
 _CLIENTLOGS_URL = "http://127.0.0.1:1002/api/v1"
-_DYNSEC_URL     = "http://127.0.0.1:1000/api/v1"
+_DYNSEC_URL = "http://127.0.0.1:1000/api/v1"
 
 
 def _load_local_llm_config() -> dict:
@@ -464,10 +490,16 @@ async def _fetch_broker_context() -> str:
             if r.status_code == 200:
                 s = r.json()
                 lines.append("## Live Broker Stats")
-                lines.append(f"- Connected clients: {s.get('connected_clients', 'N/A')}")
+                lines.append(
+                    f"- Connected clients: {s.get('connected_clients', 'N/A')}"
+                )
                 lines.append(f"- Total subscriptions: {s.get('subscriptions', 'N/A')}")
-                lines.append(f"- Messages received (total): {s.get('messages_received', 'N/A')}")
-                lines.append(f"- Messages sent (total): {s.get('messages_sent', 'N/A')}")
+                lines.append(
+                    f"- Messages received (total): {s.get('messages_received', 'N/A')}"
+                )
+                lines.append(
+                    f"- Messages sent (total): {s.get('messages_sent', 'N/A')}"
+                )
                 lines.append(f"- Bytes received: {s.get('bytes_received', 'N/A')}")
                 lines.append(f"- Bytes sent: {s.get('bytes_sent', 'N/A')}")
                 uptime = s.get("uptime") or s.get("broker_uptime")
@@ -478,27 +510,37 @@ async def _fetch_broker_context() -> str:
 
         # ── Active topics ─────────────────────────────────────────────────────
         try:
-            r = await client.get(f"{_MONITOR_URL}/topics", headers={"x-api-key": api_key})
+            r = await client.get(
+                f"{_MONITOR_URL}/topics", headers={"x-api-key": api_key}
+            )
             if r.status_code == 200:
                 topics = r.json().get("topics", [])
                 lines.append("\n## Active MQTT Topics (with latest payloads)")
                 if topics:
                     for t in topics[:30]:
                         # Monitor API returns `value` as the last payload field
-                        payload = t.get("value") or t.get("last_payload") or t.get("payload") or ""
+                        payload = (
+                            t.get("value")
+                            or t.get("last_payload")
+                            or t.get("payload")
+                            or ""
+                        )
                         count = t.get("count", "")
                         count_str = f" ({count} msgs)" if count else ""
                         payload_str = f' — last value: "{payload}"' if payload else ""
-                        lines.append(f'- `{t.get("topic", t)}`{count_str}{payload_str}')
+                        lines.append(f"- `{t.get('topic', t)}`{count_str}{payload_str}")
                 else:
-                    lines.append("- No active topics observed yet (no messages published since broker started).")
+                    lines.append(
+                        "- No active topics observed yet (no messages published since broker started)."
+                    )
         except Exception:
             lines.append("\n## Active MQTT Topics\n- (unavailable)")
 
         # ── Connected clients ─────────────────────────────────────────────────
         try:
-            r = await client.get(f"{_CLIENTLOGS_URL}/connected-clients",
-                                 headers={"x-api-key": api_key})
+            r = await client.get(
+                f"{_CLIENTLOGS_URL}/connected-clients", headers={"x-api-key": api_key}
+            )
             if r.status_code == 200:
                 clients = r.json().get("clients", [])
                 lines.append("\n## Currently Connected MQTT Clients")
@@ -519,13 +561,16 @@ async def _fetch_broker_context() -> str:
 
         # ── Registered DynSec clients ─────────────────────────────────────────
         try:
-            r = await client.get(f"{_DYNSEC_URL}/clients", headers={"x-api-key": api_key})
+            r = await client.get(
+                f"{_DYNSEC_URL}/clients", headers={"x-api-key": api_key}
+            )
             if r.status_code == 200:
                 raw = r.json().get("clients", "")
                 if isinstance(raw, str):
                     # comma or newline separated
                     names = [
-                        n.strip() for n in raw.replace(",", "\n").split("\n")
+                        n.strip()
+                        for n in raw.replace(",", "\n").split("\n")
                         if n.strip() and ":" not in n
                     ]
                 elif isinstance(raw, list):
@@ -652,7 +697,7 @@ def _extract_action_json(text: str) -> dict | None:
     idx = text.find(marker)
     if idx == -1:
         return None
-    rest = text[idx + len(marker):].lstrip()
+    rest = text[idx + len(marker) :].lstrip()
     # Walk brace-balanced to extract the full JSON object
     if not rest.startswith("{"):
         return None
@@ -682,7 +727,7 @@ def _extract_action_json(text: str) -> dict | None:
     if end == -1:
         return None
     try:
-        return json.loads(rest[:end + 1])
+        return json.loads(rest[: end + 1])
     except Exception:
         return None
 
@@ -693,7 +738,6 @@ async def _execute_action(action: dict) -> str:
     api_key = API_KEY
 
     async with httpx.AsyncClient(timeout=15.0) as client:
-
         if atype == "create_client":
             username = action.get("username", "")
             password = action.get("password", "")
@@ -731,10 +775,10 @@ async def _execute_action(action: dict) -> str:
             return "**Client creation results:**\n" + "\n".join(results)
 
         if atype == "publish":
-            topic   = action.get("topic", "")
+            topic = action.get("topic", "")
             payload = action.get("payload", "")
-            qos     = action.get("qos", 0)
-            retain  = action.get("retain", False)
+            qos = action.get("qos", 0)
+            retain = action.get("retain", False)
             if not topic:
                 return "❌ Action failed: topic is required."
             r = await client.post(
@@ -775,7 +819,9 @@ async def local_llm_chat(body: LocalLlmChatRequest, x_api_key: str = Header(...)
     system_prompt = _build_system_prompt(broker_context)
 
     user_messages = [m for m in body.messages if m.get("role") != "system"]
-    messages_with_context = [{"role": "system", "content": system_prompt}] + user_messages
+    messages_with_context = [
+        {"role": "system", "content": system_prompt}
+    ] + user_messages
 
     lm_payload = {
         "model": model,
@@ -822,6 +868,7 @@ _watcher_engine = WatcherEngine(on_fire=_on_watcher_fire)
 
 # ─── Lifespan ─────────────────────────────────────────────────────────────────
 
+
 @app.on_event("startup")
 async def startup():
     global _instance_id, _activated
@@ -832,12 +879,16 @@ async def startup():
     payload = _load_activation(_instance_id)
     if payload:
         _activated = True
-        logger.info(f"Instance {_instance_id} is activated (community, max_agents={payload.get('max_agents')})")
+        logger.info(
+            f"Instance {_instance_id} is activated (community, max_agents={payload.get('max_agents')})"
+        )
     else:
         # Try auto-activation silently
         _activated = await _try_auto_activate(_instance_id)
         if not _activated:
-            logger.info(f"Instance {_instance_id} not yet activated — banner will be shown")
+            logger.info(
+                f"Instance {_instance_id} not yet activated — banner will be shown"
+            )
 
     # Start scheduler
     scheduler.start()

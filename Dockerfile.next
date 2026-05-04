@@ -19,8 +19,8 @@ RUN npm run build
 # Stage 2: Backend base (Alpine with all services)
 # =============================================================================
 FROM alpine:3.18 AS base
-
-RUN apk update && apk add --no-cache \
+# --nocache is not used here because we want to keep the package cache for potential future use in the final stage, but we will clean it up at the end of this stage to reduce image size.
+RUN apk update && apk add \
     python3 \
     python3-dev \
     musl-dev \
@@ -41,13 +41,7 @@ RUN apk update && apk add --no-cache \
     nginx \
     openrc \
     gcc \
-    py3-cryptography && \
-    case "$(apk --print-arch)" in \
-        aarch64) apk add --no-cache openjdk11-jre-headless ;; \
-        armv7) apk add --no-cache openjdk8-jre-base ;; \
-        x86_64) apk add --no-cache openjdk11-jre ;; \
-        *) echo "Unsupported architecture" && exit 1 ;; \
-    esac
+    py3-cryptography
 
 # =============================================================================
 # Stage 3: Final image
@@ -174,8 +168,8 @@ RUN chown -R mosquitto:mosquitto /var/lib/mosquitto && \
 # Environment defaults
 ENV MQTT_BROKER=localhost \
     MQTT_PORT=1900 \
-    MQTT_USERNAME=bunker \
-    MQTT_PASSWORD=bunker \
+    MQTT_USERNAME=admin \
+    MQTT_PASSWORD=2UbhHYRw \
     JWT_SECRET=default_jwt_secret_replace_in_production \
     API_KEY=default_api_key_replace_in_production \
     HOST_ADDRESS=localhost \

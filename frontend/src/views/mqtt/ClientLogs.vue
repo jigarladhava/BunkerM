@@ -68,7 +68,7 @@ const headers = [
 ];
 
 const filteredEvents = computed(() => {
-  return events.value.filter((event: MQTTEvent) => event.username !== 'bunker');
+  return events.value.filter((event: MQTTEvent) => event.username !== 'admin');
 });
 
 

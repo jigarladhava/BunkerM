@@ -300,7 +300,7 @@ limitations under the License. -->
     
     // Count non-admin users
     const users = currentConfig.value.clients
-      ? currentConfig.value.clients.filter(client => client.username !== 'bunker').length
+      ? currentConfig.value.clients.filter(client => client.username !== 'admin').length
       : 0;
     
     // Count groups

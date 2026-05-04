@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   bunkerm:
-    image: bunkeriot/bunkerm:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.next
     ports:
       - "1900:1900"  # MQTT broker
       - "2000:2000"  # Web UI
@@ -14,8 +16,12 @@ services:
       # ── MQTT broker ─────────────────────────────────────────────────────────
       - MQTT_BROKER=localhost
       - MQTT_PORT=1900
-      - MQTT_USERNAME=${MQTT_USERNAME:-bunker}
-      - MQTT_PASSWORD=${MQTT_PASSWORD:-bunker}
+      - MQTT_USERNAME=${MQTT_USERNAME:-admin}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-2UbhHYRw}
+      - MOSQUITTO_IP=127.0.0.1
+      - MOSQUITTO_PORT=1900
+      - MOSQUITTO_ADMIN_USERNAME=${MQTT_USERNAME:-admin}
+      - MOSQUITTO_ADMIN_PASSWORD=${MQTT_PASSWORD:-2UbhHYRw}
       # ── Security — CHANGE THESE in production ───────────────────────────────
       - JWT_SECRET=${JWT_SECRET:-default_jwt_secret_replace_in_production}
       - API_KEY=${API_KEY:-default_api_key_replace_in_production}

@@ -5,6 +5,7 @@ Subscribes to topics registered as watchers, evaluates conditions locally,
 and fires a callback when a condition is met. Raw payloads never leave the
 premises — only the rendered notification message is sent to the cloud.
 """
+
 import asyncio
 import json
 import logging
@@ -18,8 +19,8 @@ logger = logging.getLogger(__name__)
 
 MQTT_HOST = os.environ.get("MQTT_HOST", "127.0.0.1")
 MQTT_PORT = int(os.environ.get("MQTT_PORT", "1900"))
-MQTT_USERNAME = os.environ.get("MQTT_USERNAME", "bunker")
-MQTT_PASSWORD = os.environ.get("MQTT_PASSWORD", "bunker")
+MQTT_USERNAME = os.environ.get("MQTT_USERNAME", "admin")
+MQTT_PASSWORD = os.environ.get("MQTT_PASSWORD", "2UbhHYRw")
 
 
 FireCallback = Callable[[str, str, str], Awaitable[None]]
@@ -49,7 +50,9 @@ class WatcherEngine:
         try:
             self._client.connect(MQTT_HOST, MQTT_PORT, keepalive=60)
             self._client.loop_start()
-            logger.info(f"Watcher engine connected to MQTT broker at {MQTT_HOST}:{MQTT_PORT}")
+            logger.info(
+                f"Watcher engine connected to MQTT broker at {MQTT_HOST}:{MQTT_PORT}"
+            )
         except Exception as e:
             logger.warning(f"Watcher engine could not connect to MQTT broker: {e}")
 
@@ -127,7 +130,9 @@ class WatcherEngine:
                 self._maybe_unsubscribe(topic)
 
             logger.info(f"Watcher {watcher_id} fired: {rendered[:80]}")
-            await self._on_fire(watcher_id, rendered, w.get("created_by", "webchat:web"))
+            await self._on_fire(
+                watcher_id, rendered, w.get("created_by", "webchat:web")
+            )
 
     def sync(self, watchers: list[dict]):
         """Replace entire watcher list (called on WS connect)."""
@@ -173,6 +178,7 @@ class WatcherEngine:
 
 # ─── Condition helpers ────────────────────────────────────────────────────────
 
+
 def _extract_value(payload: str, field: str | None):
     if field is None:
         try:
@@ -191,16 +197,26 @@ def _evaluate(value, operator: str, condition_value: str) -> bool:
     try:
         nv = float(value)
         nc = float(condition_value)
-        if operator == ">":  return nv > nc
-        if operator == "<":  return nv < nc
-        if operator == ">=": return nv >= nc
-        if operator == "<=": return nv <= nc
-        if operator == "==": return nv == nc
-        if operator == "!=": return nv != nc
+        if operator == ">":
+            return nv > nc
+        if operator == "<":
+            return nv < nc
+        if operator == ">=":
+            return nv >= nc
+        if operator == "<=":
+            return nv <= nc
+        if operator == "==":
+            return nv == nc
+        if operator == "!=":
+            return nv != nc
     except (ValueError, TypeError):
         sv = str(value)
-        if operator == "==":          return sv == condition_value
-        if operator == "!=":          return sv != condition_value
-        if operator == "contains":    return condition_value in sv
-        if operator == "starts_with": return sv.startswith(condition_value)
+        if operator == "==":
+            return sv == condition_value
+        if operator == "!=":
+            return sv != condition_value
+        if operator == "contains":
+            return condition_value in sv
+        if operator == "starts_with":
+            return sv.startswith(condition_value)
     return False

@@ -37,13 +37,12 @@ RUN echo 'window.__runtime_config__ = { \
 };' > /frontend/dist/config.js
 
 # Use Eclipse Temurin as final base
-FROM eclipse-temurin:17-jdk-alpine
+# FROM eclipse-temurin:17-jdk-alpine
+FROM python:3.12-alpine
 
-
-# Install system packages including Python dev headers, SSL dependencies, and Node.js
+# Install system packages including Python dev headers, SSL dependencies, and Node.js  python3 \
+#    python3-dev \
 RUN apk update && apk add --no-cache \
-    python3 \
-    python3-dev \
     musl-dev \
     linux-headers \
     py3-pip \
@@ -239,8 +238,8 @@ RUN chown -R mosquitto:mosquitto /var/lib/mosquitto && \
 
 ENV MQTT_BROKER=localhost \
     MQTT_PORT=1900 \
-    MQTT_USERNAME=bunker \
-    MQTT_PASSWORD=bunker \
+    MQTT_USERNAME=admin \
+    MQTT_PASSWORD=2UbhHYRw \
     JWT_SECRET=default_jwt_secret_replace_in_production \
     API_KEY=default_api_key_replace_in_production \
     VITE_API_KEY=default_api_key_replace_in_production \

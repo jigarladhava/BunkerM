@@ -6,13 +6,13 @@
 		"unsubscribe":	true
 	},
 	"clients":	[{
-			"username":	"bunker",
+			"username":	"admin",
 			"textname":	"Dynsec admin user",
 			"roles":	[{
 					"rolename":	"admin"
 				}],
-			"password":	"bZDAuypZzNug9z7yoB3vmEwGIx1COCRaN8m16bEbnAoVJxBYxz1x9fMR7cB7ToC2Kj+txYEq2bWrl1H3GtnRlg==",
-			"salt":	"MfMHo5wStiQVCpnt",
+			"password":	"yrawJsE874Ii5OAMDoJa3UY0fbhbB7ekaicHkrLM4iMtRFckKmPlAV14rsBZuDt6if7YyEiTZeT/jNgNo+QFng==",
+			"salt":	"R6MnGq42+F2xwCqx",
 			"iterations":	101
 		}],
 	"groups":	[],

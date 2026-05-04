@@ -31,8 +31,8 @@ services:
       # MQTT Settings
       - MQTT_BROKER=localhost
       - MQTT_PORT=1900
-      - MQTT_USERNAME=${MQTT_USERNAME:-bunker}
-      - MQTT_PASSWORD=${MQTT_PASSWORD:-bunker}
+      - MQTT_USERNAME=${MQTT_USERNAME:-admin}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-2UbhHYRw}
       # Backend API Security (CHANGE THESE in production — see .env.example)
       - JWT_SECRET=${JWT_SECRET:-default_jwt_secret_replace_in_production}
       - API_KEY=${API_KEY:-default_api_key_replace_in_production}
