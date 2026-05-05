@@ -75,10 +75,10 @@ os.makedirs(BACKUP_DIR, exist_ok=True)
 # Default configuration that must be preserved
 DEFAULT_CONFIG = {
     "defaultACLAccess": {
-        "publishClientSend": True,
-        "publishClientReceive": True,
-        "subscribe": True,
-        "unsubscribe": True,
+        "publishClientSend": False,
+        "publishClientReceive": False,
+        "subscribe": False,
+        "unsubscribe": False,
     },
     "clients": [
         {
