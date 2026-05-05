@@ -222,7 +222,8 @@ def validate_dynsec_json(data: Dict[str, Any]) -> Dict[str, Any]:
 def merge_dynsec_configs(imported_config: Dict[str, Any]) -> Dict[str, Any]:
     """
     Merge imported config with default config to preserve critical components.
-    - Always keeps the default 'bunker' admin client and 'admin' role.
+    - If imported file contains admin user/role, those are preserved (for full backup/restore).
+    - If not present, default admin user and role are used.
     - Always preserves the 'BunkerAI' system client:
         * If the imported file contains a BunkerAI entry, that version wins (update).
         * Otherwise the existing live entry is kept.
@@ -233,7 +234,13 @@ def merge_dynsec_configs(imported_config: Dict[str, Any]) -> Dict[str, Any]:
     merged_config = DEFAULT_CONFIG.copy()
 
     # ── Clients ───────────────────────────────────────────────────────────────
-    admin_user = DEFAULT_CONFIG["clients"][0]
+    # If imported config has an admin user, use it (preserves actual credentials from export)
+    # Otherwise use the default admin user from DEFAULT_CONFIG
+    imported_admin = next(
+        (c for c in imported_config.get("clients", []) if c.get("username") == "admin"),
+        None,
+    )
+    admin_user = imported_admin if imported_admin else DEFAULT_CONFIG["clients"][0]
 
     # Resolve the BunkerAI entry: prefer imported, fall back to live config
     bunkerai_entry = None
@@ -273,7 +280,14 @@ def merge_dynsec_configs(imported_config: Dict[str, Any]) -> Dict[str, Any]:
     )
 
     # ── Roles ─────────────────────────────────────────────────────────────────
-    admin_role = DEFAULT_CONFIG["roles"][0]
+    # If imported config has an admin role, use it; otherwise use default
+    imported_admin_role = next(
+        (r for r in imported_config.get("roles", []) if r.get("rolename") == "admin"),
+        None,
+    )
+    admin_role = (
+        imported_admin_role if imported_admin_role else DEFAULT_CONFIG["roles"][0]
+    )
     non_admin_roles = [
         r for r in imported_config.get("roles", []) if r.get("rolename") != "admin"
     ]
@@ -330,7 +344,8 @@ async def get_dynsec_json(api_key: str = Security(get_api_key)):
 @router.get("/export-dynsec-json")
 async def export_dynsec_json(api_key: str = Security(get_api_key)):
     """
-    Export the dynamic security JSON file for download, excluding default admin user and role
+    Export the dynamic security JSON file for download.
+    Includes all users, roles, and groups for full backup/restore.
     """
     try:
         logger.info("Export request received")
@@ -343,27 +358,8 @@ async def export_dynsec_json(api_key: str = Security(get_api_key)):
                 detail="Failed to read dynamic security JSON",
             )
 
-        # Create a copy of the data for modification
-        export_data = data.copy()
-
-        # Remove the default "admin" admin user from the exported data
-        if "clients" in export_data:
-            export_data["clients"] = [
-                client
-                for client in export_data["clients"]
-                if "username" not in client or client["username"] != "admin"
-            ]
-
-        # Remove the default "admin" role from the exported data
-        if "roles" in export_data:
-            export_data["roles"] = [
-                role
-                for role in export_data["roles"]
-                if "rolename" not in role or role["rolename"] != "admin"
-            ]
-
         # Create a JSON response with a filename for download
-        content = json.dumps(export_data, indent=4)
+        content = json.dumps(data, indent=4)
         filename = (
             f"dynamic-security-export-{datetime.now().strftime('%Y%m%d%H%M%S')}.json"
         )
