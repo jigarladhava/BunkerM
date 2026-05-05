@@ -2,9 +2,9 @@
 
 # ── MQTT Admin User Configuration (runs first, before mosquitto starts) ─────────────
 MQTT_ADMIN_USER="${MQTT_USERNAME:-admin}"
-MQTT_ADMIN_PASS="${MQTT_PASSWORD:-2UbhHYRw}"
+MQTT_ADMIN_PASS="${MQTT_PASSWORD:-admin@123}"
 DEFAULT_MQTT_USER="admin"
-DEFAULT_MQTT_PASS="2UbhHYRw"
+DEFAULT_MQTT_PASS="admin@123"
 
 echo "[BunkerM] MQTT credentials: user=$MQTT_ADMIN_USER"
 

@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 MQTT_HOST = os.environ.get("MQTT_HOST", "127.0.0.1")
 MQTT_PORT = int(os.environ.get("MQTT_PORT", "1900"))
 MQTT_USERNAME = os.environ.get("MQTT_USERNAME", "admin")
-MQTT_PASSWORD = os.environ.get("MQTT_PASSWORD", "2UbhHYRw")
+MQTT_PASSWORD = os.environ.get("MQTT_PASSWORD", "admin@123")
 
 
 FireCallback = Callable[[str, str, str], Awaitable[None]]

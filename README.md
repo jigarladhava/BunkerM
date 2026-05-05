@@ -117,14 +117,16 @@ Open **http://localhost:2000** in your browser.
 docker run -d -p 1900:1900 -p 2000:2000 bunkeriot/bunkerm:latest
 ```
 
-> **Note:** The pre-built image uses default credentials `admin` / `2UbhHYRw`. For production deployments, build from source and set secure credentials via environment variables.
+> **Note:** The pre-built image uses default credentials `admin` / `admin@123`. For production deployments, build from source and set secure credentials via environment variables.
 
 | Port | Service |
 |------|---------|
 | `1900` | MQTT broker |
 | `2000` | Web UI |
 
-**Default MQTT credentials:** username `admin` / password `2UbhHYRw`
+**Default MQTT credentials:** username `admin` / password `admin@123`
+
+> **Note:** Credentials can be customized via `MQTT_USERNAME` and `MQTT_PASSWORD` environment variables.
 
 ---
 
@@ -135,7 +137,7 @@ docker run -d \
   -p 1900:1900 \
   -p 2000:2000 \
   -e MQTT_USERNAME=admin \
-  -e MQTT_PASSWORD=YOUR_SECURE_PASSWORD \
+  -e MQTT_PASSWORD=admin@123 \
   -v mosquitto_data:/var/lib/mosquitto \
   -v mosquitto_conf:/etc/mosquitto \
   -v next_data:/nextjs/data \
@@ -153,7 +155,7 @@ docker run -d \
   -p 2000:2000 \
   -e HOST_ADDRESS=<YOUR_IP_OR_DOMAIN> \
   -e MQTT_USERNAME=admin \
-  -e MQTT_PASSWORD=YOUR_SECURE_PASSWORD \
+  -e MQTT_PASSWORD=admin@123 \
   bunkeriot/bunkerm:latest
 ```
 
@@ -174,9 +176,9 @@ services:
       - history_data:/var/lib/history
     environment:
       - MQTT_USERNAME=admin                  # Change in production
-      - MQTT_PASSWORD=YOUR_SECURE_PASSWORD   # Change in production
-      - HOST_ADDRESS=localhost               # change to your IP/domain for remote access
-      # - BUNKERAI_API_KEY=bkai_...         # optional: connect to BunkerAI
+      - MQTT_PASSWORD=admin@123            # Change in production
+      - HOST_ADDRESS=localhost                   # change to your IP/domain for remote access
+      # - BUNKERAI_API_KEY=bkai_...          # optional: connect to BunkerAI
     restart: unless-stopped
 
 volumes:
@@ -200,8 +202,8 @@ volumes:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MQTT_USERNAME` | admin | MQTT broker admin username (used for all connections) |
-| `MQTT_PASSWORD` | 2UbhHYRw | MQTT broker admin password (used for all connections) |
+| `MQTT_USERNAME` | admin | MQTT broker admin username |
+| `MQTT_PASSWORD` | admin@123 | MQTT broker admin password |
 | `MOSQUITTO_IP` | 127.0.0.1 | Mosquitto broker IP |
 | `MOSQUITTO_PORT` | 1900 | Mosquitto broker port |
 | `API_KEY` | (auto-generated) | API key for backend services |

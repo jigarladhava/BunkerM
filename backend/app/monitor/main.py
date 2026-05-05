@@ -57,7 +57,7 @@ MOSQUITTO_IP = os.getenv("MOSQUITTO_IP", "127.0.0.1")
 # Convert to int with a default value
 MOSQUITTO_PORT = int(os.getenv("MOSQUITTO_PORT", "1900"))
 MQTT_USERNAME = os.getenv("MQTT_USERNAME", "admin")
-MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "2UbhHYRw")
+MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "admin@123")
 
 # Security settings
 JWT_SECRET = os.getenv("JWT_SECRET", secrets.token_urlsafe(32))

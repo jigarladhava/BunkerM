@@ -16,8 +16,8 @@ services:
       # ── MQTT broker ─────────────────────────────────────────────────────────
       - MQTT_BROKER=localhost
       - MQTT_PORT=1900
-      - MQTT_USERNAME=${MQTT_USERNAME:-mqttadmin}
-      - MQTT_PASSWORD=${MQTT_PASSWORD:-S6sNHgY28uvi}
+      - MQTT_USERNAME=${MQTT_USERNAME:-admin}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-admin@123}
       - MOSQUITTO_IP=127.0.0.1
       - MOSQUITTO_PORT=1900
       # ── Security — CHANGE THESE in production ───────────────────────────────

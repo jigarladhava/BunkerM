@@ -26,7 +26,7 @@ load_dotenv()
 MOSQUITTO_IP = os.getenv("MOSQUITTO_IP", "localhost")
 MOSQUITTO_PORT = os.getenv("MOSQUITTO_PORT", "1883")
 MQTT_USERNAME = os.getenv("MQTT_USERNAME", "admin")
-MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "2UbhHYRw")
+MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "admin@123")
 
 # Base command for mosquitto_ctrl
 MOSQUITTO_BASE_COMMAND = [

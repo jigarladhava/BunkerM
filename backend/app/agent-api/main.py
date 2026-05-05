@@ -41,7 +41,7 @@ API_KEY = os.environ.get("API_KEY", "default_api_key_replace_in_production")
 MQTT_HOST = os.environ.get("MQTT_HOST", "127.0.0.1")
 MQTT_PORT = int(os.environ.get("MQTT_PORT", "1900"))
 MQTT_USER = os.environ.get("MQTT_USERNAME", "admin")
-MQTT_PASS = os.environ.get("MQTT_PASSWORD", "2UbhHYRw")
+MQTT_PASS = os.environ.get("MQTT_PASSWORD", "admin@123")
 CLOUD_URL = os.environ.get("BUNKERAI_ACTIVATION_URL", "https://api.bunkerai.dev")
 
 # Ed25519 public key — verifies signatures from BunkerAI Cloud (private key never in repo)

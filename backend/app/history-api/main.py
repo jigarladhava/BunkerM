@@ -30,7 +30,7 @@ API_KEY = os.getenv("API_KEY", "default_api_key_replace_in_production")
 MQTT_HOST = os.getenv("MQTT_BROKER", "localhost")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1900"))
 MQTT_USER = os.getenv("MQTT_USERNAME", "admin")
-MQTT_PASS = os.getenv("MQTT_PASSWORD", "2UbhHYRw")
+MQTT_PASS = os.getenv("MQTT_PASSWORD", "admin@123")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("history-api")
