@@ -76,20 +76,18 @@ RUN pip install --no-cache-dir \
 # Create mosquitto user
 RUN addgroup -g 8888 mosquitto && adduser -u 8888 -G mosquitto -s /bin/sh -D mosquitto
 
-# Install supervisord, mosquitto, nginx, node and python
-RUN apk add --no-cache mosquitto supervisor nginx nodejs python3 py3-pip
+# Install supervisord, mosquitto, node and python
+RUN apk add --no-cache mosquitto supervisor nodejs python3 py3-pip
 
 # Create all required directories
 RUN mkdir -p \
-    /run/nginx \
-    /etc/nginx/conf.d \
+    /run/supervisor \
     /etc/supervisor/conf.d \
     /app \
     /app/jwt \
     /var/log/api \
     /var/log/mosquitto \
     /var/log/supervisor \
-    /var/log/nginx \
     /etc/mosquitto/conf.d \
     /var/lib/mosquitto/db \
     /tmp/mosquitto_backups \
@@ -98,10 +96,6 @@ RUN mkdir -p \
     /var/lib/history && \
     touch /etc/mosquitto/mosquitto_passwd && \
     chmod 644 /etc/mosquitto/mosquitto_passwd
-
-# Configure nginx
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY default-next.conf /etc/nginx/conf.d/default.conf
 
 # Configure supervisord
 COPY supervisord-next.conf /etc/supervisor/conf.d/supervisord.conf
